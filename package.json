@@ -1,19 +1,20 @@
 {
-  "name": "@seneca/gateway",
-  "version": "0.1.5",
-  "main": "dist/gateway.js",
+  "name": "@seneca/gateway-lambda",
+  "version": "0.1.0",
+  "main": "dist/gateway-lambda.js",
   "type": "commonjs",
-  "types": "dist/gateway.d.ts",
-  "description": "Handle incoming messages within other frameworks.",
-  "homepage": "https://github.com/senecajs/seneca-gateway",
+  "types": "dist/gateway-lambda.d.ts",
+  "description": "Handle incoming messages within AWS Lambdas.",
+  "homepage": "https://github.com/senecajs/seneca-gateway-lambda",
   "keywords": [
-    "seneca",
-    "gateway"
+    "gateway",
+    "lambda",
+    "seneca"
   ],
   "author": "Richard Rodger - richardrodger.com",
   "repository": {
     "type": "git",
-    "url": "git://github.com/senecajs/seneca-gateway.git"
+    "url": "git://github.com/senecajs/seneca-gateway-lambda.git"
   },
   "scripts": {
     "test": "jest --coverage",
@@ -34,17 +35,19 @@
     "LICENSE"
   ],
   "devDependencies": {
+    "@seneca/gateway": "^0.1.5",
     "@types/jest": "^27.0.1",
-    "esbuild": "^0.12.24",
+    "esbuild": "^0.12.25",
     "esbuild-jest": "^0.5.0",
     "jest": "^27.1.0",
-    "seneca": ">=3",
+    "seneca": "^3.23.3",
     "seneca-msg-test": "^3.2.0",
-    "seneca-promisify": ">=2",
+    "seneca-promisify": "^2.0.0",
     "typescript": "^4.4.2"
   },
   "peerDependencies": {
-    "seneca": ">=3",
-    "seneca-promisify": ">=2"
+    "seneca-promisify": ">=2",
+    "@seneca/gateway": ">=0",
+    "seneca": ">=3"
   }
 }

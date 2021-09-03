@@ -12,6 +12,7 @@ function gateway_lambda(this: any, options: any) {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*', // TODO: option!
+        'Access-Control-Allow-Headers': '*', // TODO: option!
       },
       body: '{}',
     }

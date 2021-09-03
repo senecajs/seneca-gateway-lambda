@@ -47,6 +47,7 @@ describe('gateway-lambda', () => {
       "body": "{\"x\":2,\"y\":99}",
       "headers": {
         "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*"
       },
       "statusCode": 200,
     })
@@ -57,6 +58,7 @@ describe('gateway-lambda', () => {
       "body": "{\"seneca$\":true,\"code$\":\"act_not_found\",\"error$\":true}",
       "headers": {
         "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*"
       },
       "statusCode": 400,
     })

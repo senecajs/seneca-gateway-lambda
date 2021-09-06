@@ -41,8 +41,6 @@ describe('gateway-lambda', () => {
     let out = await handler(evmock({ foo: 1, x: 2 }), ctxmock)
     out.body = out.body.replace(/,"meta\$":\{"id":".*"\}/, '')
 
-    // console.log(out)
-
     expect(out).toMatchObject({
       "body": "{\"x\":2,\"y\":99}",
       "headers": {

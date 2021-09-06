@@ -8,7 +8,7 @@ function gateway_lambda(this: any, options: any) {
 
   seneca.act('sys:gateway,add:hook,hook:custom', {
     action: async function gateway_lambda_custom(custom: any, _json: any, ctx: any) {
-      const user = ctx.event?.requestContext?.authorizer?.claims
+      const user = ctx.event?.requestContext?.authorizer?.claims?.user
       if (user) {
         // TODO: need a plugin, seneca-principal, to make this uniform
         custom.principal = { user }

@@ -7,8 +7,8 @@ function gateway_lambda(options) {
     const parseJSON = seneca.export('gateway/parseJSON');
     seneca.act('sys:gateway,add:hook,hook:custom', {
         action: async function gateway_lambda_custom(custom, _json, ctx) {
-            var _a, _b, _c;
-            const user = (_c = (_b = (_a = ctx.event) === null || _a === void 0 ? void 0 : _a.requestContext) === null || _b === void 0 ? void 0 : _b.authorizer) === null || _c === void 0 ? void 0 : _c.claims;
+            var _a, _b, _c, _d;
+            const user = (_d = (_c = (_b = (_a = ctx.event) === null || _a === void 0 ? void 0 : _a.requestContext) === null || _b === void 0 ? void 0 : _b.authorizer) === null || _c === void 0 ? void 0 : _c.claims) === null || _d === void 0 ? void 0 : _d.user;
             if (user) {
                 // TODO: need a plugin, seneca-principal, to make this uniform
                 custom.principal = { user };

@@ -5,6 +5,28 @@ function gateway_lambda(options) {
     const seneca = this;
     const gateway = seneca.export('gateway/handler');
     const parseJSON = seneca.export('gateway/parseJSON');
+    seneca.act('sys:gateway,add:hook,hook:custom', {
+        action: async function gateway_lambda_custom(custom, _json, ctx) {
+            var _a, _b, _c;
+            const user = (_c = (_b = (_a = ctx.event) === null || _a === void 0 ? void 0 : _a.requestContext) === null || _b === void 0 ? void 0 : _b.authorizer) === null || _c === void 0 ? void 0 : _c.claims;
+            if (user) {
+                // TODO: need a plugin, seneca-principal, to make this uniform
+                custom.principal = { user };
+            }
+        }
+    });
+    seneca.act('sys:gateway,add:hook,hook:action', {
+        action: function gateway_lambda_before(_msg, ctx) {
+            var _a, _b, _c;
+            if (options.auth.cognito.required) {
+                let seneca = this;
+                let user = (_c = (_b = (_a = seneca === null || seneca === void 0 ? void 0 : seneca.fixedmeta) === null || _a === void 0 ? void 0 : _a.custom) === null || _b === void 0 ? void 0 : _b.principal) === null || _c === void 0 ? void 0 : _c.user;
+                if (null == user) {
+                    return { ok: false, why: 'no-auth' };
+                }
+            }
+        }
+    });
     async function handler(event, context) {
         const res = {
             statusCode: 200,
@@ -39,7 +61,13 @@ function gateway_lambda(options) {
     };
 }
 // Default options.
-gateway_lambda.defaults = {};
+gateway_lambda.defaults = {
+    auth: {
+        cognito: {
+            required: false
+        }
+    }
+};
 exports.default = gateway_lambda;
 if ('undefined' !== typeof (module)) {
     module.exports = gateway_lambda;

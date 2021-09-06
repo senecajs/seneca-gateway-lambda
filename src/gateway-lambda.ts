@@ -6,6 +6,31 @@ function gateway_lambda(this: any, options: any) {
   const parseJSON = seneca.export('gateway/parseJSON')
 
 
+  seneca.act('sys:gateway,add:hook,hook:custom', {
+    action: async function gateway_lambda_custom(custom: any, _json: any, ctx: any) {
+      const user = ctx.event?.requestContext?.authorizer?.claims
+      if (user) {
+        // TODO: need a plugin, seneca-principal, to make this uniform
+        custom.principal = { user }
+      }
+    }
+  })
+
+
+  seneca.act('sys:gateway,add:hook,hook:action', {
+    action: function gateway_lambda_before(this: any, _msg: any, ctx: any) {
+      if (options.auth.cognito.required) {
+        let seneca: any = this
+        let user = seneca?.fixedmeta?.custom?.principal?.user
+        if (null == user) {
+          return { ok: false, why: 'no-auth' }
+        }
+      }
+    }
+  })
+
+
+
   async function handler(event: any, context: any) {
 
     const res: any = {
@@ -37,6 +62,8 @@ function gateway_lambda(this: any, options: any) {
   }
 
 
+
+
   return {
     name: 'gateway-lambda',
     exports: {
@@ -48,6 +75,11 @@ function gateway_lambda(this: any, options: any) {
 
 // Default options.
 gateway_lambda.defaults = {
+  auth: {
+    cognito: {
+      required: false
+    }
+  }
 }
 
 

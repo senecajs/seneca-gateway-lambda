@@ -3,6 +3,8 @@ import GatewayLambda from '../src/gateway-lambda'
 
 const Seneca = require('seneca')
 
+const { Maintain } = require('@seneca/maintain')
+
 describe('gateway-lambda', () => {
 
   test('happy', async () => {
@@ -65,3 +67,4 @@ describe('gateway-lambda', () => {
 
 })
 
+Maintain()

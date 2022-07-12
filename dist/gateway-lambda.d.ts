@@ -11,6 +11,10 @@ declare namespace gateway_lambda {
                 required: boolean;
             };
         };
+        headers: {
+            'Access-Control-Allow-Origin': string;
+            'Access-Control-Allow-Headers': string;
+        };
     };
 }
 export default gateway_lambda;

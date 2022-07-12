@@ -1,6 +1,6 @@
 {
   "name": "@seneca/gateway-lambda",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "main": "dist/gateway-lambda.js",
   "type": "commonjs",
   "types": "dist/gateway-lambda.d.ts",
@@ -36,17 +36,17 @@
   ],
   "devDependencies": {
     "@seneca/gateway": "^0.1.6",
-    "@types/jest": "^27.0.1",
-    "esbuild": "^0.12.25",
+    "@types/jest": "^28.1.4",
+    "esbuild": "^0.14.49",
     "esbuild-jest": "^0.5.0",
-    "jest": "^27.1.0",
+    "jest": "^28.1.2",
     "seneca": "^3.23.3",
-    "seneca-msg-test": "^3.2.0",
+    "seneca-msg-test": "^3.4.0",
     "seneca-promisify": "^2.0.0",
-    "typescript": "^4.4.2"
+    "typescript": "^4.7.4"
   },
   "peerDependencies": {
-    "seneca-promisify": ">=2",
+    "seneca-promisify": ">=3",
     "@seneca/gateway": ">=0",
     "seneca": ">=3"
   }

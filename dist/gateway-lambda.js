@@ -31,8 +31,8 @@ function gateway_lambda(options) {
         const res = {
             statusCode: 200,
             headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': '*', // TODO: option!
+                'Access-Control-Allow-Origin': options.headers['Access-Control-Allow-Origin'],
+                'Access-Control-Allow-Headers': options.headers['Access-Control-Allow-Headers'],
             },
             body: '{}',
         };
@@ -66,6 +66,10 @@ gateway_lambda.defaults = {
         cognito: {
             required: false
         }
+    },
+    headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': '*',
     }
 };
 exports.default = gateway_lambda;

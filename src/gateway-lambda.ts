@@ -61,9 +61,6 @@ function gateway_lambda(this: any, options: any) {
     return res
   }
 
-
-
-
   return {
     name: 'gateway-lambda',
     exports: {

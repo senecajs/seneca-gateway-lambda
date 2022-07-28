@@ -53,12 +53,12 @@ describe('gateway-lambda', () => {
     out = await handler(evmock({ bad: 1 }), ctxmock)
 
     expect(out).toMatchObject({
-      "body": "{\"seneca$\":true,\"code$\":\"act_not_found\",\"error$\":true}",
+      "body": "{\"handler$\":{\"seneca\":true,\"code\":\"act_not_found\",\"error\":true,\"message\":null}}",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "*"
       },
-      "statusCode": 400,
+      "statusCode": 200,
     })
 
   })

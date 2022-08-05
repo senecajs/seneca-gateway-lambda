@@ -1,39 +1,50 @@
 "use strict";
-/* Copyright © 2021 Richard Rodger, MIT License. */
+/* Copyright © 2021-2022 Richard Rodger, MIT License. */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const cookie_1 = __importDefault(require("cookie"));
+const gubu_1 = require("gubu");
 function gateway_lambda(options) {
     const seneca = this;
-    const gateway = seneca.export('gateway/handler');
-    const parseJSON = seneca.export('gateway/parseJSON');
+    const tag = seneca.plugin.tag;
+    const gtag = (null == tag || '-' === tag) ? '' : '$' + tag;
+    const gateway = seneca.export('gateway' + gtag + '/handler');
+    const parseJSON = seneca.export('gateway' + gtag + '/parseJSON');
+    /* TODO: move to gateway-auth
     seneca.act('sys:gateway,add:hook,hook:custom', {
-        action: async function gateway_lambda_custom(custom, _json, ctx) {
-            var _a, _b, _c;
-            const user = (_c = (_b = (_a = ctx.event) === null || _a === void 0 ? void 0 : _a.requestContext) === null || _b === void 0 ? void 0 : _b.authorizer) === null || _c === void 0 ? void 0 : _c.claims;
-            if (user) {
-                // TODO: need a plugin, seneca-principal, to make this uniform
-                custom.principal = { user };
-            }
+      action: async function gateway_lambda_custom(custom: any, _json: any, ctx: any) {
+        const user = ctx.event?.requestContext?.authorizer?.claims
+        if (user) {
+          // TODO: need a plugin, seneca-principal, to make this uniform
+          custom.principal = { user }
         }
-    });
+      }
+    })
+  
+  
     seneca.act('sys:gateway,add:hook,hook:action', {
-        action: function gateway_lambda_before(_msg, ctx) {
-            var _a, _b, _c;
-            if (options.auth.cognito.required) {
-                let seneca = this;
-                let user = (_c = (_b = (_a = seneca === null || seneca === void 0 ? void 0 : seneca.fixedmeta) === null || _a === void 0 ? void 0 : _a.custom) === null || _b === void 0 ? void 0 : _b.principal) === null || _c === void 0 ? void 0 : _c.user;
-                if (null == user) {
-                    return { ok: false, why: 'no-auth' };
-                }
-            }
+      action: function gateway_lambda_before(this: any, _msg: any, ctx: any) {
+        if (options.auth.cognito.required) {
+          let seneca: any = this
+          let user = seneca?.fixedmeta?.custom?.principal?.user
+          if (null == user) {
+            return { ok: false, why: 'no-auth' }
+          }
         }
-    });
+      }
+    })
+    */
     async function handler(event, context) {
+        var _a, _b;
         const res = {
             statusCode: 200,
-            headers: {
-                'Access-Control-Allow-Origin': options.headers['Access-Control-Allow-Origin'],
-                'Access-Control-Allow-Headers': options.headers['Access-Control-Allow-Headers'],
-            },
+            headers: { ...options.headers },
+            // headers: {
+            //   'Access-Control-Allow-Origin': options.headers['Access-Control-Allow-Origin'],
+            //   'Access-Control-Allow-Headers': options.headers['Access-Control-Allow-Headers'],
+            // },
             body: '{}',
         };
         let body = event.body;
@@ -41,15 +52,35 @@ function gateway_lambda(options) {
         if (json.error$) {
             res.statusCode = 400;
             res.body = JSON.stringify(json);
+            return res;
         }
-        else {
-            let out = await gateway(json, { res, event, context });
-            if (null != out) {
-                res.body = JSON.stringify(out);
-                if (out.error$) {
-                    res.statusCode = 400;
-                }
+        let result = await gateway(json, { res, event, context });
+        if (result.out) {
+            res.body = JSON.stringify(result.out);
+        }
+        let gateway$ = result.gateway$;
+        if (gateway$.auth && options.auth) {
+            if (gateway$.auth.token) {
+                res.headers['set-cookie'] =
+                    cookie_1.default.serialize(options.auth.token.name, gateway$.auth.token, {
+                        ...options.auth.cookie,
+                        ...(gateway.auth.cookie || {})
+                    });
             }
+            else if (gateway$.auth.remove) {
+                res.headers['set-cookie'] =
+                    options.auth.token + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            }
+        }
+        else if ((_a = gateway$.redirect) === null || _a === void 0 ? void 0 : _a.location) {
+            res.statusCode = 302;
+            res.headers.loction = (_b = gateway$.redirect) === null || _b === void 0 ? void 0 : _b.location;
+        }
+        if (result.error) {
+            res.statusCode = gateway$.status || 500;
+        }
+        else if (gateway$.status) {
+            res.statusCode = gateway$.status;
         }
         return res;
     }
@@ -65,7 +96,15 @@ gateway_lambda.defaults = {
     auth: {
         cognito: {
             required: false
-        }
+        },
+        token: {
+            name: 'seneca-auth'
+        },
+        cookie: (0, gubu_1.Open)({
+            maxAge: 365 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            sameSite: true,
+        })
     },
     headers: {
         'Access-Control-Allow-Origin': '*',

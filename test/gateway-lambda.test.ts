@@ -14,6 +14,7 @@ describe('gateway-lambda', () => {
     await seneca.ready()
   })
 
+
   test('basic', async () => {
     const seneca = Seneca({ legacy: false })
       .test()
@@ -52,13 +53,16 @@ describe('gateway-lambda', () => {
 
     out = await handler(evmock({ bad: 1 }), ctxmock)
 
+    out.body =
+      out.body.replace(/meta\$":\{"id":"[^"]+"/, 'meta$\":{\"id\":\"METAID\"')
+
     expect(out).toMatchObject({
-      "body": "{\"handler$\":{\"seneca\":true,\"code\":\"act_not_found\",\"error\":true,\"message\":null}}",
+      "body": "{\"meta$\":{\"id\":\"METAID\"},\"error$\":{\"name\":\"Error\",\"code\":\"act_not_found\"}}",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "*"
       },
-      "statusCode": 200,
+      "statusCode": 500,
     })
 
   })

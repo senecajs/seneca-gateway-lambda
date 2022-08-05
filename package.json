@@ -1,6 +1,6 @@
 {
   "name": "@seneca/gateway-lambda",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "main": "dist/gateway-lambda.js",
   "type": "commonjs",
   "types": "dist/gateway-lambda.d.ts",
@@ -45,7 +45,7 @@
     "typescript": "^4.7.4"
   },
   "peerDependencies": {
-    "@seneca/gateway": ">=0",
+    "@seneca/gateway": ">=0.5",
     "seneca": ">=3",
     "seneca-promisify": ">=3"
   },

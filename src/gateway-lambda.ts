@@ -184,10 +184,11 @@ gateway_lambda.defaults = {
       sameSite: true,
     })
   },
-  headers: {
+  headers: Open({
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
-  }
+    'Access-Control-Allow-Credentials': 'include',
+  })
 }
 
 

@@ -29,9 +29,8 @@ declare namespace gateway_lambda {
                 [name: string]: any;
             };
         };
-        headers: {
-            'Access-Control-Allow-Origin': string;
-            'Access-Control-Allow-Headers': string;
+        headers: import("gubu").Node & {
+            [name: string]: any;
         };
     };
 }

@@ -106,10 +106,11 @@ gateway_lambda.defaults = {
             sameSite: true,
         })
     },
-    headers: {
+    headers: (0, gubu_1.Open)({
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': '*',
-    }
+        'Access-Control-Allow-Credentials': 'include',
+    })
 };
 exports.default = gateway_lambda;
 if ('undefined' !== typeof (module)) {

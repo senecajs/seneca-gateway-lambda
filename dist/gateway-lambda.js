@@ -41,10 +41,6 @@ function gateway_lambda(options) {
         const res = {
             statusCode: 200,
             headers: { ...options.headers },
-            // headers: {
-            //   'Access-Control-Allow-Origin': options.headers['Access-Control-Allow-Origin'],
-            //   'Access-Control-Allow-Headers': options.headers['Access-Control-Allow-Headers'],
-            // },
             body: '{}',
         };
         let body = event.body;
@@ -59,28 +55,31 @@ function gateway_lambda(options) {
             res.body = JSON.stringify(result.out);
         }
         let gateway$ = result.gateway$;
-        if (gateway$.auth && options.auth) {
-            if (gateway$.auth.token) {
-                res.headers['set-cookie'] =
-                    cookie_1.default.serialize(options.auth.token.name, gateway$.auth.token, {
-                        ...options.auth.cookie,
-                        ...(gateway.auth.cookie || {})
-                    });
+        if (gateway$) {
+            delete result.gateway$;
+            if (gateway$.auth && options.auth) {
+                if (gateway$.auth.token) {
+                    res.headers['set-cookie'] =
+                        cookie_1.default.serialize(options.auth.token.name, gateway$.auth.token, {
+                            ...options.auth.cookie,
+                            ...(gateway$.auth.cookie || {})
+                        });
+                }
+                else if (gateway$.auth.remove) {
+                    res.headers['set-cookie'] =
+                        options.auth.token + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                }
             }
-            else if (gateway$.auth.remove) {
-                res.headers['set-cookie'] =
-                    options.auth.token + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            else if ((_a = gateway$.redirect) === null || _a === void 0 ? void 0 : _a.location) {
+                res.statusCode = 302;
+                res.headers.loction = (_b = gateway$.redirect) === null || _b === void 0 ? void 0 : _b.location;
             }
-        }
-        else if ((_a = gateway$.redirect) === null || _a === void 0 ? void 0 : _a.location) {
-            res.statusCode = 302;
-            res.headers.loction = (_b = gateway$.redirect) === null || _b === void 0 ? void 0 : _b.location;
-        }
-        if (result.error) {
-            res.statusCode = gateway$.status || 500;
-        }
-        else if (gateway$.status) {
-            res.statusCode = gateway$.status;
+            if (result.error) {
+                res.statusCode = gateway$.status || 500;
+            }
+            else if (gateway$.status) {
+                res.statusCode = gateway$.status;
+            }
         }
         return res;
     }
@@ -109,7 +108,7 @@ gateway_lambda.defaults = {
     headers: (0, gubu_1.Open)({
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': '*',
-        'Access-Control-Allow-Credentials': 'include',
+        'Access-Control-Allow-Credentials': 'true',
     })
 };
 exports.default = gateway_lambda;

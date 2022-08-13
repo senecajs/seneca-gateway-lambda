@@ -102,10 +102,6 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
     const res: any = {
       statusCode: 200,
       headers: { ...options.headers },
-      // headers: {
-      //   'Access-Control-Allow-Origin': options.headers['Access-Control-Allow-Origin'],
-      //   'Access-Control-Allow-Headers': options.headers['Access-Control-Allow-Headers'],
-      // },
       body: '{}',
     }
 
@@ -127,34 +123,38 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
     let gateway$: GatewayLambdaDirective = result.gateway$
 
-    if (gateway$.auth && options.auth) {
-      if (gateway$.auth.token) {
-        res.headers['set-cookie'] =
-          Cookie.serialize(
-            options.auth.token.name,
-            gateway$.auth.token,
-            {
-              ...options.auth.cookie,
-              ...(gateway.auth.cookie || {})
-            }
-          )
-      }
-      else if (gateway$.auth.remove) {
-        res.headers['set-cookie'] =
-          options.auth.token + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      }
-    }
+    if (gateway$) {
+      delete result.gateway$
 
-    else if (gateway$.redirect?.location) {
-      res.statusCode = 302
-      res.headers.loction = gateway$.redirect?.location
-    }
+      if (gateway$.auth && options.auth) {
+        if (gateway$.auth.token) {
+          res.headers['set-cookie'] =
+            Cookie.serialize(
+              options.auth.token.name,
+              gateway$.auth.token,
+              {
+                ...options.auth.cookie,
+                ...(gateway$.auth.cookie || {})
+              }
+            )
+        }
+        else if (gateway$.auth.remove) {
+          res.headers['set-cookie'] =
+            options.auth.token + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        }
+      }
 
-    if (result.error) {
-      res.statusCode = gateway$.status || 500
-    }
-    else if (gateway$.status) {
-      res.statusCode = gateway$.status
+      else if (gateway$.redirect?.location) {
+        res.statusCode = 302
+        res.headers.loction = gateway$.redirect?.location
+      }
+
+      if (result.error) {
+        res.statusCode = gateway$.status || 500
+      }
+      else if (gateway$.status) {
+        res.statusCode = gateway$.status
+      }
     }
 
     return res
@@ -187,7 +187,7 @@ gateway_lambda.defaults = {
   headers: Open({
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
-    'Access-Control-Allow-Credentials': 'include',
+    'Access-Control-Allow-Credentials': 'true',
   })
 }
 

@@ -128,7 +128,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
       if (gateway$.auth && options.auth) {
         if (gateway$.auth.token) {
-          res.headers['set-cookie'] =
+          let cookieStr =
             Cookie.serialize(
               options.auth.token.name,
               gateway$.auth.token,
@@ -137,6 +137,8 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
                 ...(gateway$.auth.cookie || {})
               }
             )
+          console.log('SET-COOKIE', cookieStr, options.auth.cookie, gateway$.auth.cookie)
+          res.headers['set-cookie'] = cookieStr
         }
         else if (gateway$.auth.remove) {
           res.headers['set-cookie'] =
@@ -182,6 +184,7 @@ gateway_lambda.defaults = {
       maxAge: 365 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       sameSite: true,
+      path: '/',
     })
   },
   headers: Open({

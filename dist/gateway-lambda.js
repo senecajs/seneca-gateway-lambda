@@ -59,11 +59,12 @@ function gateway_lambda(options) {
             delete result.gateway$;
             if (gateway$.auth && options.auth) {
                 if (gateway$.auth.token) {
-                    res.headers['set-cookie'] =
-                        cookie_1.default.serialize(options.auth.token.name, gateway$.auth.token, {
-                            ...options.auth.cookie,
-                            ...(gateway$.auth.cookie || {})
-                        });
+                    let cookieStr = cookie_1.default.serialize(options.auth.token.name, gateway$.auth.token, {
+                        ...options.auth.cookie,
+                        ...(gateway$.auth.cookie || {})
+                    });
+                    console.log('SET-COOKIE', cookieStr, options.auth.cookie, gateway$.auth.cookie);
+                    res.headers['set-cookie'] = cookieStr;
                 }
                 else if (gateway$.auth.remove) {
                     res.headers['set-cookie'] =
@@ -103,6 +104,7 @@ gateway_lambda.defaults = {
             maxAge: 365 * 24 * 60 * 60 * 1000,
             httpOnly: true,
             sameSite: true,
+            path: '/',
         })
     },
     headers: (0, gubu_1.Open)({

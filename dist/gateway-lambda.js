@@ -52,6 +52,17 @@ function gateway_lambda(options) {
             res.body = JSON.stringify(json);
             return res;
         }
+        // Check if hook
+        if ('GET' === event.httpMethod) {
+            let pm = event.path.match(/([^\/]+)\/([^\/]+)$/);
+            console.log('HOOK', event.path, pm);
+            if (pm) {
+                json.name = pm[1];
+                json.code = pm[2];
+                json.handle = 'hook';
+            }
+            console.log('HOOK MSG', json);
+        }
         let result = await gateway(json, { res, event, context });
         if (result.out) {
             res.body = JSON.stringify(result.out);
@@ -89,7 +100,7 @@ function gateway_lambda(options) {
     return {
         name: 'gateway-lambda',
         exports: {
-            handler
+            handler,
         }
     };
 }

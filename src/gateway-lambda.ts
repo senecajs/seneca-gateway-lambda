@@ -107,7 +107,10 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
     let body = event.body
 
-    let json = 'string' === typeof (body) ? parseJSON(body) : body
+    let json = null == body ? {} :
+      'string' === typeof (body) ? parseJSON(body) : body
+
+    json = null == json ? {} : json
 
     if (json.error$) {
       res.statusCode = 400

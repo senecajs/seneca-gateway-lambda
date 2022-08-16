@@ -148,7 +148,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
       else if (gateway$.redirect?.location) {
         res.statusCode = 302
-        res.headers.loction = gateway$.redirect?.location
+        res.headers.location = gateway$.redirect?.location
       }
 
       if (result.error) {

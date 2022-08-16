@@ -73,7 +73,7 @@ function gateway_lambda(options) {
             }
             else if ((_a = gateway$.redirect) === null || _a === void 0 ? void 0 : _a.location) {
                 res.statusCode = 302;
-                res.headers.loction = (_b = gateway$.redirect) === null || _b === void 0 ? void 0 : _b.location;
+                res.headers.location = (_b = gateway$.redirect) === null || _b === void 0 ? void 0 : _b.location;
             }
             if (result.error) {
                 res.statusCode = gateway$.status || 500;

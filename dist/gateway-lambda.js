@@ -81,7 +81,7 @@ function gateway_lambda(options) {
                 }
                 else if (gateway$.auth.remove) {
                     res.headers['set-cookie'] =
-                        options.auth.token + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                        options.auth.token.name + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
                 }
             }
             else if ((_a = gateway$.redirect) === null || _a === void 0 ? void 0 : _a.location) {

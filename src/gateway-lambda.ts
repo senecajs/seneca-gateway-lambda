@@ -158,7 +158,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
         }
         else if (gateway$.auth.remove) {
           res.headers['set-cookie'] =
-            options.auth.token + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+            options.auth.token.name + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
         }
       }
 

@@ -1,5 +1,6 @@
 
 import GatewayLambda from '../src/gateway-lambda'
+import { Maintain } from '@seneca/maintain'
 
 const Seneca = require('seneca')
 
@@ -112,3 +113,4 @@ describe('gateway-lambda', () => {
 
 })
 
+})

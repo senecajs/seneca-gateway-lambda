@@ -12,30 +12,6 @@ function gateway_lambda(options) {
     const gtag = (null == tag || '-' === tag) ? '' : '$' + tag;
     const gateway = seneca.export('gateway' + gtag + '/handler');
     const parseJSON = seneca.export('gateway' + gtag + '/parseJSON');
-    /* TODO: move to gateway-auth
-    seneca.act('sys:gateway,add:hook,hook:custom', {
-      action: async function gateway_lambda_custom(custom: any, _json: any, ctx: any) {
-        const user = ctx.event?.requestContext?.authorizer?.claims
-        if (user) {
-          // TODO: need a plugin, seneca-principal, to make this uniform
-          custom.principal = { user }
-        }
-      }
-    })
-  
-  
-    seneca.act('sys:gateway,add:hook,hook:action', {
-      action: function gateway_lambda_before(this: any, _msg: any, ctx: any) {
-        if (options.auth.cognito.required) {
-          let seneca: any = this
-          let user = seneca?.fixedmeta?.custom?.principal?.user
-          if (null == user) {
-            return { ok: false, why: 'no-auth' }
-          }
-        }
-      }
-    })
-    */
     async function handler(event, context) {
         var _a, _b;
         const res = {
@@ -97,15 +73,28 @@ function gateway_lambda(options) {
         }
         return res;
     }
+    async function eventhandler(event, context) {
+        var _a;
+        let json = {
+            event,
+            ...seneca.util.Jsonic(((_a = options.event) === null || _a === void 0 ? void 0 : _a.msg) || {})
+        };
+        let result = await gateway(json, { event, context });
+        return result;
+    }
     return {
         name: 'gateway-lambda',
         exports: {
             handler,
+            eventhandler,
         }
     };
 }
 // Default options.
 gateway_lambda.defaults = {
+    event: {
+        msg: 'sys,gateway,handle:event'
+    },
     auth: {
         cognito: {
             required: false

@@ -4,7 +4,7 @@
 import Cookie from 'cookie'
 
 
-import { Open } from 'gubu'
+import { Open, Skip } from 'gubu'
 
 
 import type {
@@ -13,6 +13,9 @@ import type {
 
 
 type GatewayLambdaOptions = {
+  event?: {
+    msg?: any
+  },
   auth?: {
     cognito: {
       required: boolean
@@ -24,12 +27,6 @@ type GatewayLambdaOptions = {
     // Default cookie fields
     cookie?: any
   },
-  // error?: {
-
-  //   // Use the default express error handler for errors
-  //   next: boolean
-  // },
-
   headers: Record<string, string>
 }
 
@@ -69,32 +66,6 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
   const gtag = (null == tag || '-' === tag) ? '' : '$' + tag
   const gateway = seneca.export('gateway' + gtag + '/handler')
   const parseJSON = seneca.export('gateway' + gtag + '/parseJSON')
-
-
-  /* TODO: move to gateway-auth
-  seneca.act('sys:gateway,add:hook,hook:custom', {
-    action: async function gateway_lambda_custom(custom: any, _json: any, ctx: any) {
-      const user = ctx.event?.requestContext?.authorizer?.claims
-      if (user) {
-        // TODO: need a plugin, seneca-principal, to make this uniform
-        custom.principal = { user }
-      }
-    }
-  })
-
-
-  seneca.act('sys:gateway,add:hook,hook:action', {
-    action: function gateway_lambda_before(this: any, _msg: any, ctx: any) {
-      if (options.auth.cognito.required) {
-        let seneca: any = this
-        let user = seneca?.fixedmeta?.custom?.principal?.user
-        if (null == user) {
-          return { ok: false, why: 'no-auth' }
-        }
-      }
-    }
-  })
-  */
 
 
   async function handler(event: any, context: any) {
@@ -179,11 +150,21 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
   }
 
 
+  async function eventhandler(event: any, context: any) {
+    let json = {
+      event,
+      ...seneca.util.Jsonic(options.event?.msg || {})
+    }
+    let result: any = await gateway(json, { event, context })
+    return result
+  }
+
 
   return {
     name: 'gateway-lambda',
     exports: {
       handler,
+      eventhandler,
     }
   }
 }
@@ -191,6 +172,9 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
 // Default options.
 gateway_lambda.defaults = {
+  event: {
+    msg: 'sys,gateway,handle:event'
+  },
   auth: {
     cognito: {
       required: false

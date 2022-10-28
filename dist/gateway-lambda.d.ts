@@ -1,4 +1,7 @@
 declare type GatewayLambdaOptions = {
+    event?: {
+        msg?: any;
+    };
     auth?: {
         cognito: {
             required: boolean;
@@ -14,10 +17,14 @@ declare function gateway_lambda(this: any, options: GatewayLambdaOptions): {
     name: string;
     exports: {
         handler: (event: any, context: any) => Promise<any>;
+        eventhandler: (event: any, context: any) => Promise<any>;
     };
 };
 declare namespace gateway_lambda {
     var defaults: {
+        event: {
+            msg: string;
+        };
         auth: {
             cognito: {
                 required: boolean;

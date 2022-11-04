@@ -1,6 +1,6 @@
 {
   "name": "@seneca/gateway-lambda",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "main": "dist/gateway-lambda.js",
   "type": "commonjs",
   "types": "dist/gateway-lambda.d.ts",

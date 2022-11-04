@@ -74,10 +74,11 @@ function gateway_lambda(options) {
         return res;
     }
     async function eventhandler(event, context) {
-        var _a;
+        let msg = seneca.util.Jsonic(event.seneca$.msg);
+        // console.log('MSG', msg)
         let json = {
             event,
-            ...seneca.util.Jsonic(((_a = options.event) === null || _a === void 0 ? void 0 : _a.msg) || {})
+            ...msg,
         };
         let result = await gateway(json, { event, context });
         return result;

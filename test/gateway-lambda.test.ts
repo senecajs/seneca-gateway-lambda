@@ -122,11 +122,7 @@ describe('gateway-lambda', () => {
 
       .use('promisify')
       .use('gateway')
-      .use(GatewayLambda, {
-        event: {
-          msg: 'foo:1'
-        }
-      })
+      .use(GatewayLambda)
       .message('foo:1', async function(msg: any) {
         return { ok: true, bar: 2, event: msg.event }
       })
@@ -137,6 +133,10 @@ describe('gateway-lambda', () => {
 
     let res = await eventhandler(
       {
+        seneca$: {
+          msg: 'foo:1'
+          // msg: { foo: 1 }
+        },
         "Records": [
           {
             "eventVersion": "2.0",

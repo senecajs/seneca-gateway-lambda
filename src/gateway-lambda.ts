@@ -104,7 +104,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
     json.gateway = {
       params: event.pathParameters,
-      query: event.queryStringParameters,
+      query: { …(event.queryStringParameters||{}), …(event.multiValueQueryStringParameters||{}) },
     }
 
     let result: any = await gateway(json, { res, event, context })

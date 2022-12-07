@@ -1,4 +1,4 @@
-declare type GatewayLambdaOptions = {
+type GatewayLambdaOptions = {
     event?: {
         msg?: any;
     };

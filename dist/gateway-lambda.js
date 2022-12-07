@@ -39,6 +39,10 @@ function gateway_lambda(options) {
             }
             console.log('HOOK MSG', json);
         }
+        json.gateway = {
+            params: event.pathParameters,
+            query: { ...(event.queryStringParameters || {}), ...(event.multiValueQueryStringParameters || {}) },
+        };
         let result = await gateway(json, { res, event, context });
         if (result.out) {
             res.body = JSON.stringify(result.out);

@@ -102,9 +102,14 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
       console.log('HOOK MSG', json)
     }
 
+    let queryStringParams = { ...(event.queryStringParameters||{}), ...(event.multiValueQueryStringParameters||{}) }
+    Object.keys(queryStringParams).forEach((key, index)=>{
+      queryStringParams[key] = (queryStringParams[key].length === 1)?queryStringParams[key][0]:queryStringParams[key]
+    })
+
     json.gateway = {
       params: event.pathParameters,
-      query: { ...(event.queryStringParameters||{}), ...(event.multiValueQueryStringParameters||{}) },
+      query: queryStringParams,
     }
 
     console.log(json)

@@ -46,6 +46,7 @@ describe('gateway-lambda', () => {
 
     expect(out).toMatchObject({
       "body": "{\"x\":2,\"y\":99}",
+      "queryStringParameters":"{\"query\":1}",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "*"

@@ -35,11 +35,13 @@ describe('gateway-lambda', () => {
     let handler = seneca.export('gateway-lambda/handler')
 
     let evmock = (body: any) => ({
-      body
+      body,
+      queryStringParameters:body.queryStringParameters,
+      pathParameters:body.pathParameters
     })
     let ctxmock = {}
 
-    let out = await handler({ foo: 1, x: 2, pathParameters: {var: 1}, queryStringParameters: {query: 1} }, ctxmock)
+    let out = await handler(evmock({ foo: 1, x: 2, pathParameters: {var: 1}, queryStringParameters: {query: 1} }), ctxmock)
     out.body = out.body.replace(/,"meta\$":\{"id":".*"\}/, '')
 
     expect(out).toMatchObject({

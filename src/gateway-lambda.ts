@@ -76,7 +76,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
       body: '{}',
     }
 
-    let body = event.body || event
+    let body = event.body
 
     let json = null == body ? {} :
       'string' === typeof (body) ? parseJSON(body) : body
@@ -106,6 +106,8 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
       params: event.pathParameters,
       query: { ...(event.queryStringParameters||{}), ...(event.multiValueQueryStringParameters||{}) },
     }
+
+    console.log(json)
 
     let result: any = await gateway(json, { res, event, context })
 

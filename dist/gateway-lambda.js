@@ -39,10 +39,17 @@ function gateway_lambda(options) {
             }
             console.log('HOOK MSG', json);
         }
+    
+        
+        let queryStringParams = { ...(event.queryStringParameters || {}), ...(event.multiValueQueryStringParameters || {}) };
+        Object.keys(queryStringParams).forEach((key, index) => {
+            queryStringParams[key] = (queryStringParams[key].length === 1) ? queryStringParams[key][0] : queryStringParams[key];
+        });
         json.gateway = {
             params: event.pathParameters,
-            query: { ...(event.queryStringParameters || {}), ...(event.multiValueQueryStringParameters || {}) },
+            query: queryStringParams,
         };
+        
         let result = await gateway(json, { res, event, context });
         if (result.out) {
             res.body = JSON.stringify(result.out);

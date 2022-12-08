@@ -93,28 +93,22 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
     // Check if hook
     if ('GET' === event.httpMethod) {
       let pm = event.path.match(/([^\/]+)\/([^\/]+)$/)
-      console.log('HOOK', event.path, pm)
       if (pm) {
         json.name = pm[1]
         json.code = pm[2]
         json.handle = 'hook'
       }
-      console.log('HOOK MSG', json)
     }
 
     let queryStringParams = { ...(event.queryStringParameters||{}), ...(event.multiValueQueryStringParameters||{}) }
     Object.keys(queryStringParams).forEach((key, index)=>{
-      queryStringParams[key] = (queryStringParams[key].length === 1)?queryStringParams[key][0]:queryStringParams[key]
+      queryStringParams[key] = (Array.isArray(queryStringParams[key]) && queryStringParams[key].length === 1)?queryStringParams[key][0]:queryStringParams[key]
     })
 
     json.gateway = {
       params: event.pathParameters,
       query: queryStringParams,
     }
-
-    res.queryStringParameters = JSON.stringify(queryStringParams)
-
-    console.log(json)
 
     let result: any = await gateway(json, { res, event, context })
 
@@ -138,7 +132,6 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
                 ...(gateway$.auth.cookie || {})
               }
             )
-          console.log('SET-COOKIE', cookieStr, options.auth.cookie, gateway$.auth.cookie)
           res.headers['set-cookie'] = cookieStr
         }
         else if (gateway$.auth.remove) {
@@ -166,7 +159,6 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
   async function eventhandler(event: any, context: any) {
     let msg = seneca.util.Jsonic(event.seneca$.msg)
-    // console.log('MSG', msg)
 
     let json = {
       event,

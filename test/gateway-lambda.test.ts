@@ -39,7 +39,7 @@ describe('gateway-lambda', () => {
     })
     let ctxmock = {}
 
-    let out = await handler(evmock({ foo: 1, x: 2 }), ctxmock)
+    let out = await handler({ foo: 1, x: 2, pathParameters: {var: 1}, queryStringParameters: {query: 1} }, ctxmock)
     out.body = out.body.replace(/,"meta\$":\{"id":".*"\}/, '')
 
     expect(out).toMatchObject({
@@ -185,4 +185,3 @@ describe('gateway-lambda', () => {
   })
 
 })
-

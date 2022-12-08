@@ -76,7 +76,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
       body: '{}',
     }
 
-    let body = event.body
+    let body = event.body || event
 
     let json = null == body ? {} :
       'string' === typeof (body) ? parseJSON(body) : body

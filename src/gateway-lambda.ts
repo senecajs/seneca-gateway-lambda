@@ -112,8 +112,6 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
       query: queryStringParams,
     }
 
-    res.queryStringParameters = JSON.stringify(queryStringParams)
-
     console.log(json)
 
     let result: any = await gateway(json, { res, event, context })

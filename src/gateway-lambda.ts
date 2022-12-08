@@ -104,7 +104,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
     let queryStringParams = { ...(event.queryStringParameters||{}), ...(event.multiValueQueryStringParameters||{}) }
     Object.keys(queryStringParams).forEach((key, index)=>{
-      queryStringParams[key] = (queryStringParams[key].length === 1)?queryStringParams[key][0]:queryStringParams[key]
+      queryStringParams[key] = (Array.isArray(queryStringParams[key]) && queryStringParams[key].length === 1)?queryStringParams[key][0]:queryStringParams[key]
     })
 
     json.gateway = {

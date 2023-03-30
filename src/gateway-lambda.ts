@@ -55,6 +55,9 @@ type GatewayLambdaDirective = {
 
   // HTTP status code
   status?: number
+
+  // Custom headers
+  headers?: Record<string, string>
 }
 
 
@@ -143,6 +146,10 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
       }
       else if (gateway$.status) {
         res.statusCode = gateway$.status
+      }
+
+      if (gateway$.headers) {
+        res.headers = { ...res.headers, ...gateway$.headers }
       }
     }
 

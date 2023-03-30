@@ -70,6 +70,9 @@ function gateway_lambda(options) {
             else if (gateway$.status) {
                 res.statusCode = gateway$.status;
             }
+            if (gateway$.headers) {
+                res.headers = { ...res.headers, ...gateway$.headers };
+            }
         }
         return res;
     }

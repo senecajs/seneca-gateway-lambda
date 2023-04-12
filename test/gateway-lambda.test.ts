@@ -34,14 +34,20 @@ describe('gateway-lambda', () => {
 
     let handler = seneca.export('gateway-lambda/handler')
 
-    let evmock = (body: any) => ({
+    let evmock = (body: any, headers?: any) => ({
       body,
-      queryStringParameters:body.queryStringParameters,
-      pathParameters:body.pathParameters
+      queryStringParameters: body.queryStringParameters,
+      pathParameters: body.pathParameters,
+      headers: headers || {},
     })
     let ctxmock = {}
 
-    let out = await handler(evmock({ foo: 1, x: 2, pathParameters: {var: 1}, queryStringParameters: {query: 1} }), ctxmock)
+    let out = await handler(evmock({
+      foo: 1,
+      x: 2,
+      pathParameters: { var: 1 },
+      queryStringParameters: { query: 1 }
+    }, { 'Foo-Bar': 'Zed' }), ctxmock)
     out.body = out.body.replace(/,"meta\$":\{"id":".*"\}/, '')
 
     expect(out).toMatchObject({
@@ -87,6 +93,7 @@ describe('gateway-lambda', () => {
       })
       .act('sys:gateway,add:hook,hook:fixed', { action: { y: 99 } })
       .message('foo:1', async function(m: any) {
+        expect(m.gateway.headers['foo-bar']).toEqual('Zed')
         return { x: m.x, y: m.y }
       })
 
@@ -94,12 +101,13 @@ describe('gateway-lambda', () => {
 
     let handler = seneca.export('gateway-lambda/handler')
 
-    let evmock = (body: any) => ({
-      body
+    let evmock = (body: any, headers?: any) => ({
+      body,
+      headers: headers || {}
     })
     let ctxmock = {}
 
-    let out = await handler(evmock({ foo: 1, x: 2 }), ctxmock)
+    let out = await handler(evmock({ foo: 1, x: 2 }, { 'Foo-Bar': 'Zed' }), ctxmock)
     out.body = out.body.replace(/,"meta\$":\{"id":".*"\}/, '')
 
     expect(out).toMatchObject({

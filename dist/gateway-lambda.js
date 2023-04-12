@@ -20,6 +20,9 @@ function gateway_lambda(options) {
             body: '{}',
         };
         let body = event.body;
+        let headers = Object
+            .entries(event.headers)
+            .reduce((a, entry) => (a[entry[0].toLowerCase()] = entry[1], a), {});
         let json = null == body ? {} :
             'string' === typeof (body) ? parseJSON(body) : body;
         json = null == json ? {} : json;
@@ -37,13 +40,21 @@ function gateway_lambda(options) {
                 json.handle = 'hook';
             }
         }
-        let queryStringParams = { ...(event.queryStringParameters || {}), ...(event.multiValueQueryStringParameters || {}) };
-        Object.keys(queryStringParams).forEach((key, index) => {
-            queryStringParams[key] = (Array.isArray(queryStringParams[key]) && queryStringParams[key].length === 1) ? queryStringParams[key][0] : queryStringParams[key];
+        let queryStringParams = {
+            ...(event.queryStringParameters || {}),
+            ...(event.multiValueQueryStringParameters || {})
+        };
+        Object.keys(queryStringParams).forEach((key, _index) => {
+            queryStringParams[key] =
+                (Array.isArray(queryStringParams[key]) &&
+                    queryStringParams[key].length === 1) ?
+                    queryStringParams[key][0] : queryStringParams[key];
         });
         json.gateway = {
             params: event.pathParameters,
             query: queryStringParams,
+            body,
+            headers
         };
         let result = await gateway(json, { res, event, context });
         if (result.out) {
@@ -75,6 +86,7 @@ function gateway_lambda(options) {
             else if (gateway$.status) {
                 res.statusCode = gateway$.status;
             }
+            // TODO: should also accept `header` to match express
             if (gateway$.headers) {
                 res.headers = { ...res.headers, ...gateway$.headers };
             }

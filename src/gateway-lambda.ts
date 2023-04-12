@@ -80,6 +80,12 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
     }
 
     let body = event.body
+    let headers = Object
+      .entries(event.headers)
+      .reduce(
+        (a: any, entry: any) => (a[entry[0].toLowerCase()] = entry[1], a),
+        ({} as any)
+      )
 
     let json = null == body ? {} :
       'string' === typeof (body) ? parseJSON(body) : body
@@ -103,14 +109,23 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
       }
     }
 
-    let queryStringParams = { ...(event.queryStringParameters||{}), ...(event.multiValueQueryStringParameters||{}) }
-    Object.keys(queryStringParams).forEach((key, index)=>{
-      queryStringParams[key] = (Array.isArray(queryStringParams[key]) && queryStringParams[key].length === 1)?queryStringParams[key][0]:queryStringParams[key]
+    let queryStringParams = {
+      ...(event.queryStringParameters || {}),
+      ...(event.multiValueQueryStringParameters || {})
+    }
+
+    Object.keys(queryStringParams).forEach((key, _index) => {
+      queryStringParams[key] =
+        (Array.isArray(queryStringParams[key]) &&
+          queryStringParams[key].length === 1) ?
+          queryStringParams[key][0] : queryStringParams[key]
     })
 
     json.gateway = {
       params: event.pathParameters,
       query: queryStringParams,
+      body,
+      headers
     }
 
     let result: any = await gateway(json, { res, event, context })
@@ -155,6 +170,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
         res.statusCode = gateway$.status
       }
 
+      // TODO: should also accept `header` to match express
       if (gateway$.headers) {
         res.headers = { ...res.headers, ...gateway$.headers }
       }

@@ -20,7 +20,7 @@ function gateway_lambda(options) {
             body: '{}',
         };
         let body = event.body;
-        let headers = Object
+        let headers = null == event.headers ? {} : Object
             .entries(event.headers)
             .reduce((a, entry) => (a[entry[0].toLowerCase()] = entry[1], a), {});
         let json = null == body ? {} :

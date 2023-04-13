@@ -80,7 +80,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
     }
 
     let body = event.body
-    let headers = Object
+    let headers = null == event.headers ? {} : Object
       .entries(event.headers)
       .reduce(
         (a: any, entry: any) => (a[entry[0].toLowerCase()] = entry[1], a),

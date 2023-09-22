@@ -24,6 +24,8 @@ function gateway_lambda(options) {
                         json[param] = m[1 + pI];
                     }
                     Object.assign(json, (webhook.fixed || {}));
+                    json.body =
+                        'string' === typeof event.body ? parseJSON(event.body) : event.body;
                     match = true;
                     break done;
                 }
@@ -42,6 +44,7 @@ function gateway_lambda(options) {
         let headers = null == event.headers ? {} : Object
             .entries(event.headers)
             .reduce((a, entry) => (a[entry[0].toLowerCase()] = entry[1], a), {});
+        // TODO: need better control of how the body is presented
         let json = null == body ? {} :
             'string' === typeof (body) ? parseJSON(body) : body;
         json = null == json ? {} : json;

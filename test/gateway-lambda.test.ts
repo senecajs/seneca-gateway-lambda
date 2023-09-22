@@ -214,7 +214,7 @@ describe('gateway-lambda', () => {
       .message('handle:hook,name:foo', async function(m: any) {
         // console.log(m)
 
-        return { x: m.x, y: m.gateway.query.y }
+        return { x: m.body.x, y: m.gateway.query.y }
       })
 
     await seneca.ready()

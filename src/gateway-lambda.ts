@@ -89,6 +89,8 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
             json[param] = m[1 + pI]
           }
           Object.assign(json, (webhook.fixed || {}))
+          json.body =
+            'string' === typeof event.body ? parseJSON(event.body) : event.body
           match = true
           break done;
         }
@@ -114,6 +116,7 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
         ({} as any)
       )
 
+    // TODO: need better control of how the body is presented
     let json = null == body ? {} :
       'string' === typeof (body) ? parseJSON(body) : body
 

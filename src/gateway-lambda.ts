@@ -12,6 +12,12 @@ import type {
 } from '@seneca/gateway'
 
 
+type WebHookSpec = {
+  re: RegExp
+  params: string[]
+  fixed: Record<string, any>
+}
+
 type GatewayLambdaOptions = {
   event?: {
     msg?: any
@@ -27,7 +33,8 @@ type GatewayLambdaOptions = {
     // Default cookie fields
     cookie?: any
   },
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  webhooks?: WebHookSpec[]
 }
 
 
@@ -70,6 +77,26 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
   const gateway = seneca.export('gateway' + gtag + '/handler')
   const parseJSON = seneca.export('gateway' + gtag + '/parseJSON')
 
+  const webhookMatch = (event: any, json: any) => {
+    let match = false
+    done: for (let webhook of (options.webhooks || [])) {
+      if (webhook.re) {
+        let m = webhook.re.exec(event.path)
+        if (m) {
+          let params = (webhook.params || [])
+          for (let pI = 0; pI < params.length; pI++) {
+            let param = params[pI]
+            json[param] = m[1 + pI]
+          }
+          Object.assign(json, (webhook.fixed || {}))
+          match = true
+          break done;
+        }
+      }
+    }
+    return match
+  }
+
 
   async function handler(event: any, context: any) {
 
@@ -100,7 +127,10 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
 
     // Check if hook
-    if ('GET' === event.httpMethod) {
+    if (
+      // TODO: legacy, deprecate
+      'GET' === event.httpMethod
+    ) {
       let pm = event.path.match(/([^\/]+)\/([^\/]+)$/)
       if (pm) {
         json.name = pm[1]
@@ -108,6 +138,11 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
         json.handle = 'hook'
       }
     }
+    else {
+      webhookMatch(event, json)
+    }
+
+    // console.log('AAA', json)
 
     let queryStringParams = {
       ...(event.queryStringParameters || {}),
@@ -225,7 +260,12 @@ gateway_lambda.defaults = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
     'Access-Control-Allow-Credentials': 'true',
-  })
+  }),
+  webhooks: [{
+    re: RegExp,
+    params: [String],
+    fixed: {}
+  }]
 }
 
 

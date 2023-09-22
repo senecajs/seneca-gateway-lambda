@@ -12,6 +12,25 @@ function gateway_lambda(options) {
     const gtag = (null == tag || '-' === tag) ? '' : '$' + tag;
     const gateway = seneca.export('gateway' + gtag + '/handler');
     const parseJSON = seneca.export('gateway' + gtag + '/parseJSON');
+    const webhookMatch = (event, json) => {
+        let match = false;
+        done: for (let webhook of (options.webhooks || [])) {
+            if (webhook.re) {
+                let m = webhook.re.exec(event.path);
+                if (m) {
+                    let params = (webhook.params || []);
+                    for (let pI = 0; pI < params.length; pI++) {
+                        let param = params[pI];
+                        json[param] = m[1 + pI];
+                    }
+                    Object.assign(json, (webhook.fixed || {}));
+                    match = true;
+                    break done;
+                }
+            }
+        }
+        return match;
+    };
     async function handler(event, context) {
         var _a, _b;
         const res = {
@@ -32,7 +51,9 @@ function gateway_lambda(options) {
             return res;
         }
         // Check if hook
-        if ('GET' === event.httpMethod) {
+        if (
+        // TODO: legacy, deprecate
+        'GET' === event.httpMethod) {
             let pm = event.path.match(/([^\/]+)\/([^\/]+)$/);
             if (pm) {
                 json.name = pm[1];
@@ -40,6 +61,10 @@ function gateway_lambda(options) {
                 json.handle = 'hook';
             }
         }
+        else {
+            webhookMatch(event, json);
+        }
+        // console.log('AAA', json)
         let queryStringParams = {
             ...(event.queryStringParameters || {}),
             ...(event.multiValueQueryStringParameters || {})
@@ -133,7 +158,12 @@ gateway_lambda.defaults = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': '*',
         'Access-Control-Allow-Credentials': 'true',
-    })
+    }),
+    webhooks: [{
+            re: RegExp,
+            params: [String],
+            fixed: {}
+        }]
 };
 exports.default = gateway_lambda;
 if ('undefined' !== typeof (module)) {

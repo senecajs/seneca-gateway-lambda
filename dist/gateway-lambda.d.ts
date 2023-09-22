@@ -1,3 +1,8 @@
+type WebHookSpec = {
+    re: RegExp;
+    params: string[];
+    fixed: Record<string, any>;
+};
 type GatewayLambdaOptions = {
     event?: {
         msg?: any;
@@ -12,6 +17,7 @@ type GatewayLambdaOptions = {
         cookie?: any;
     };
     headers: Record<string, string>;
+    webhooks?: WebHookSpec[];
 };
 declare function gateway_lambda(this: any, options: GatewayLambdaOptions): {
     name: string;
@@ -39,6 +45,11 @@ declare namespace gateway_lambda {
         headers: import("gubu").Node & {
             [name: string]: any;
         };
+        webhooks: {
+            re: RegExpConstructor;
+            params: StringConstructor[];
+            fixed: {};
+        }[];
     };
 }
 export default gateway_lambda;

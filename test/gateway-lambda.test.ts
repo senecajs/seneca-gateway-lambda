@@ -194,4 +194,58 @@ describe('gateway-lambda', () => {
     expect(out).toMatchObject({ ok: true, bar: 2, event: {} })
   })
 
+
+  test('webhooks', async () => {
+    const seneca = Seneca({ legacy: false })
+      // .test('print')
+
+      // use quiet$ directive when available
+      .quiet()
+
+      .use('promisify')
+      .use('gateway')
+      .use(GatewayLambda, {
+        webhooks: [{
+          re: /api\/public\/hook\/([^\/]+)\/([^\/?]+)/,
+          params: ['name', 'code'],
+          fixed: { handle: 'hook' },
+        }]
+      })
+      .message('handle:hook,name:foo', async function(m: any) {
+        // console.log(m)
+
+        return { x: m.x, y: m.gateway.query.y }
+      })
+
+    await seneca.ready()
+
+    let handler = seneca.export('gateway-lambda/handler')
+
+    let evmock = (path: string, body: any, headers?: any, query?: any) => ({
+      path,
+      body,
+      headers: headers || {},
+      queryStringParameters: query || {},
+    })
+    let ctxmock = {}
+
+    let event = evmock(
+      'http://example.com/api/public/hook/foo/bar?y=1',
+      { x: 2 },
+      { 'Foo-Bar': 'Zed' },
+      { y: '1' },
+    )
+
+    //  console.log('EVENT', event)
+
+    let out = await handler(event, ctxmock)
+    out.body = out.body.replace(/,"meta\$":\{"id":".*"\}/, '')
+
+    expect(out).toMatchObject({
+      "body": "{\"x\":2,\"y\":\"1\"}",
+      "statusCode": 200,
+    })
+  })
+
+
 })

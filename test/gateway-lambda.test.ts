@@ -62,10 +62,10 @@ describe('gateway-lambda', () => {
     out = await handler(evmock({ bad: 1 }), ctxmock)
 
     out.body =
-      out.body.replace(/meta\$":\{"id":"[^"]+"/, 'meta$\":{\"id\":\"METAID\"')
+      out.body.replace(/"id":"[^"]+"/g, '\"id\":\"METAID\"')
 
     expect(out).toMatchObject({
-      "body": "{\"meta$\":{\"id\":\"METAID\"},\"error$\":{\"name\":\"Error\",\"code\":\"act_not_found\"}}",
+      "body": "{\"meta$\":{\"id\":\"METAID\",\"error\":true},\"name\":\"Error\",\"id\":\"METAID\",\"code\":\"act_not_found\"}",
       "headers": {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "*"
@@ -245,6 +245,39 @@ describe('gateway-lambda', () => {
       "body": "{\"x\":2,\"y\":\"1\"}",
       "statusCode": 200,
     })
+  })
+
+
+  test('custom-handler', async () => {
+    const seneca = Seneca({ legacy: false })
+      .test()
+      .use('promisify')
+      .use('gateway')
+      .use(GatewayLambda)
+      .act('sys:gateway,kind:lambda,add:hook,hook:handler', {
+        handler: {
+          name: 'sqs',
+          match: (event: any) => {
+            let matched = 'aws:sqs' === (event.Records && event.Records[0]?.eventSource)
+            console.log('MATCHED', matched, event)
+            return matched
+          },
+          process: async function(this: typeof Seneca, event: any, _context: any) {
+            let body = JSON.parse(event.Records[0].body)
+            return seneca.post(body)
+          }
+        }
+      })
+      .message('a:1', async function(msg: any) {
+        return { x: 1 + msg.x }
+      })
+    await seneca.ready()
+
+    let handler = seneca.export('gateway-lambda/handler')
+
+    let out = await handler({ Records: [{ eventSource: 'aws:sqs', body: '{"a":1,"x":1}' }] })
+
+    expect(out).toMatchObject({ x: 2 })
   })
 
 

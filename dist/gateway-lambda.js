@@ -6,10 +6,42 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const cookie_1 = __importDefault(require("cookie"));
 const gubu_1 = require("gubu");
+// Default options.
+const defaults = {
+    event: {
+        msg: 'sys,gateway,handle:event'
+    },
+    auth: {
+        cognito: {
+            required: false
+        },
+        token: {
+            name: 'seneca-auth'
+        },
+        cookie: (0, gubu_1.Open)({
+            maxAge: 365 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            sameSite: true,
+            path: '/',
+        })
+    },
+    headers: (0, gubu_1.Open)({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Allow-Credentials': 'true',
+    }),
+    webhooks: [{
+            re: RegExp,
+            params: [String],
+            fixed: {}
+        }]
+};
 function gateway_lambda(options) {
     const seneca = this;
+    const handlers = [];
     const tag = seneca.plugin.tag;
     const gtag = (null == tag || '-' === tag) ? '' : '$' + tag;
+    const prepare = seneca.export('gateway' + gtag + '/prepare');
     const gateway = seneca.export('gateway' + gtag + '/handler');
     const parseJSON = seneca.export('gateway' + gtag + '/parseJSON');
     const webhookMatch = (event, json) => {
@@ -33,8 +65,21 @@ function gateway_lambda(options) {
         }
         return match;
     };
+    seneca
+        .fix('sys:gateway,kind:lambda')
+        .message('add:hook,hook:handler', { handler: { name: String, match: Function, process: Function } }, async function (msg) {
+        handlers.push(msg.handler);
+    });
     async function handler(event, context) {
         var _a, _b;
+        if (0 < handlers.length) {
+            for (let handler of handlers) {
+                if (handler.match(event, context)) {
+                    const handlerDelegate = prepare(event, { context });
+                    return handler.process.call(handlerDelegate, event, context);
+                }
+            }
+        }
         const res = {
             statusCode: 200,
             headers: { ...options.headers },
@@ -135,39 +180,11 @@ function gateway_lambda(options) {
         exports: {
             handler,
             eventhandler,
+            handlers: () => handlers,
         }
     };
 }
-// Default options.
-gateway_lambda.defaults = {
-    event: {
-        msg: 'sys,gateway,handle:event'
-    },
-    auth: {
-        cognito: {
-            required: false
-        },
-        token: {
-            name: 'seneca-auth'
-        },
-        cookie: (0, gubu_1.Open)({
-            maxAge: 365 * 24 * 60 * 60 * 1000,
-            httpOnly: true,
-            sameSite: true,
-            path: '/',
-        })
-    },
-    headers: (0, gubu_1.Open)({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': '*',
-        'Access-Control-Allow-Credentials': 'true',
-    }),
-    webhooks: [{
-            re: RegExp,
-            params: [String],
-            fixed: {}
-        }]
-};
+Object.assign(gateway_lambda, { defaults });
 exports.default = gateway_lambda;
 if ('undefined' !== typeof (module)) {
     module.exports = gateway_lambda;

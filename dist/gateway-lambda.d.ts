@@ -20,10 +20,16 @@ type Options = {
     webhooks: WebHookSpec[];
 };
 export type GatewayLambdaOptions = Partial<Options>;
+type Trigger = {
+    record: any;
+    event: any;
+    context: any;
+    gtag: string;
+};
 type Handler = {
     name: string;
-    match: (event: any, context: any) => boolean;
-    process: (event: any, context: any) => any;
+    match: (trigger: Trigger) => boolean;
+    process: (trigger: Trigger, gateway: Function) => any;
 };
 declare function gateway_lambda(this: any, options: Options): {
     name: string;

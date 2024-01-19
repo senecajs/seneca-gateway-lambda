@@ -71,13 +71,25 @@ function gateway_lambda(options) {
         handlers.push(msg.handler);
     });
     async function handler(event, context) {
-        var _a, _b;
-        if (0 < handlers.length) {
-            for (let handler of handlers) {
-                if (handler.match(event, context)) {
-                    const handlerDelegate = prepare(event, { context });
-                    return handler.process.call(handlerDelegate, event, context);
+        var _a, _b, _c;
+        if (0 < handlers.length && 0 < ((_a = event.Records) === null || _a === void 0 ? void 0 : _a.length)) {
+            let matched = 0;
+            let lastResult = undefined;
+            nextRecord: for (let record of event.Records) {
+                for (let handler of handlers) {
+                    if (handler.match({ record, event, context, gtag })) {
+                        matched++;
+                        const handlerDelegate = prepare(event, { context });
+                        lastResult =
+                            handler.process.call(handlerDelegate, {
+                                record, event, context, gtag
+                            }, gateway);
+                        break nextRecord;
+                    }
                 }
+            }
+            if (0 < matched) {
+                return lastResult;
             }
         }
         const res = {
@@ -149,9 +161,9 @@ function gateway_lambda(options) {
                         options.auth.token.name + '=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
                 }
             }
-            else if ((_a = gateway$.redirect) === null || _a === void 0 ? void 0 : _a.location) {
+            else if ((_b = gateway$.redirect) === null || _b === void 0 ? void 0 : _b.location) {
                 res.statusCode = 302;
-                res.headers.location = (_b = gateway$.redirect) === null || _b === void 0 ? void 0 : _b.location;
+                res.headers.location = (_c = gateway$.redirect) === null || _c === void 0 ? void 0 : _c.location;
             }
             if (result.error) {
                 res.statusCode = gateway$.status || 500;

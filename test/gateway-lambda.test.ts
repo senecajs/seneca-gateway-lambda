@@ -257,14 +257,14 @@ describe('gateway-lambda', () => {
       .act('sys:gateway,kind:lambda,add:hook,hook:handler', {
         handler: {
           name: 'sqs',
-          match: (event: any) => {
-            let matched = 'aws:sqs' === (event.Records && event.Records[0]?.eventSource)
-            console.log('MATCHED', matched, event)
+          match: (trigger: any) => {
+            let matched = 'aws:sqs' === trigger.record.eventSource
             return matched
           },
-          process: async function(this: typeof Seneca, event: any, _context: any) {
-            let body = JSON.parse(event.Records[0].body)
-            return seneca.post(body)
+          process: async function(this: typeof Seneca, trigger: any, gateway: any) {
+            let msg = JSON.parse(trigger.record.body)
+            // return seneca.post(body)
+            return gateway(msg, trigger)
           }
         }
       })
@@ -275,9 +275,9 @@ describe('gateway-lambda', () => {
 
     let handler = seneca.export('gateway-lambda/handler')
 
-    let out = await handler({ Records: [{ eventSource: 'aws:sqs', body: '{"a":1,"x":1}' }] })
+    let res = await handler({ Records: [{ eventSource: 'aws:sqs', body: '{"a":1,"x":1}' }] })
 
-    expect(out).toMatchObject({ x: 2 })
+    expect(res.out).toMatchObject({ x: 2 })
   })
 
 

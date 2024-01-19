@@ -106,10 +106,17 @@ type GatewayLambdaDirective = {
 }
 
 
+type Trigger = {
+  record: any,
+  event: any,
+  context: any,
+  gtag: string
+}
+
 type Handler = {
   name: string,
-  match: (event: any, context: any) => boolean
-  process: (event: any, context: any) => any
+  match: (trigger: Trigger) => boolean
+  process: (trigger: Trigger, gateway: Function) => any
 }
 
 
@@ -159,12 +166,24 @@ function gateway_lambda(this: any, options: Options) {
 
   async function handler(event: any, context: any) {
 
-    if (0 < handlers.length) {
-      for (let handler of handlers) {
-        if (handler.match(event, context)) {
-          const handlerDelegate = prepare(event, { context })
-          return handler.process.call(handlerDelegate, event, context)
+    if (0 < handlers.length && 0 < event.Records?.length) {
+      let matched = 0
+      let lastResult = undefined
+      nextRecord: for (let record of event.Records) {
+        for (let handler of handlers) {
+          if (handler.match({ record, event, context, gtag })) {
+            matched++
+            const handlerDelegate = prepare(event, { context })
+            lastResult =
+              handler.process.call(handlerDelegate, {
+                record, event, context, gtag
+              }, gateway)
+            break nextRecord
+          }
         }
+      }
+      if (0 < matched) {
+        return lastResult
       }
     }
 

@@ -124,7 +124,6 @@ function gateway_lambda(options) {
         else {
             webhookMatch(event, json);
         }
-        // console.log('AAA', json)
         let queryStringParams = {
             ...(event.queryStringParameters || {}),
             ...(event.multiValueQueryStringParameters || {})

@@ -7,13 +7,24 @@ import Cookie from 'cookie'
 import { Open } from 'gubu'
 
 
+/*
 import type {
   GatewayResult
 } from '@seneca/gateway'
+*/
 
 
-type GatewayLambdaOptions = {
-  auth?: {
+type WebHookSpec = {
+  re: RegExp
+  params: string[]
+  fixed: Record<string, any>
+}
+
+type Options = {
+  event: {
+    msg: any
+  },
+  auth: {
     cognito: {
       required: boolean
     },
@@ -24,14 +35,45 @@ type GatewayLambdaOptions = {
     // Default cookie fields
     cookie?: any
   },
-  // error?: {
-
-  //   // Use the default express error handler for errors
-  //   next: boolean
-  // },
-
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  webhooks: WebHookSpec[]
 }
+
+
+export type GatewayLambdaOptions = Partial<Options>
+
+
+// Default options.
+const defaults = {
+  event: {
+    msg: 'sys,gateway,handle:event'
+  },
+  auth: {
+    cognito: {
+      required: false
+    },
+    token: {
+      name: 'seneca-auth'
+    },
+    cookie: Open({
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: true,
+      path: '/',
+    })
+  },
+  headers: Open({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Credentials': 'true',
+  }),
+  webhooks: [{
+    re: RegExp,
+    params: [String],
+    fixed: {}
+  }]
+}
+
 
 
 type GatewayLambdaDirective = {
@@ -58,46 +100,92 @@ type GatewayLambdaDirective = {
 
   // HTTP status code
   status?: number
+
+  // Custom headers
+  headers?: Record<string, string>
 }
 
 
+type Trigger = {
+  record: any,
+  event: any,
+  context: any,
+  gtag: string
+}
 
-function gateway_lambda(this: any, options: GatewayLambdaOptions) {
+type Handler = {
+  name: string,
+  match: (trigger: Trigger) => boolean
+  process: (trigger: Trigger, gateway: Function) => any
+}
+
+
+function gateway_lambda(this: any, options: Options) {
   const seneca: any = this
+
+  const handlers: Handler[] = []
 
   const tag = seneca.plugin.tag
   const gtag = (null == tag || '-' === tag) ? '' : '$' + tag
+  const prepare = seneca.export('gateway' + gtag + '/prepare')
   const gateway = seneca.export('gateway' + gtag + '/handler')
   const parseJSON = seneca.export('gateway' + gtag + '/parseJSON')
 
-
-  /* TODO: move to gateway-auth
-  seneca.act('sys:gateway,add:hook,hook:custom', {
-    action: async function gateway_lambda_custom(custom: any, _json: any, ctx: any) {
-      const user = ctx.event?.requestContext?.authorizer?.claims
-      if (user) {
-        // TODO: need a plugin, seneca-principal, to make this uniform
-        custom.principal = { user }
-      }
-    }
-  })
-
-
-  seneca.act('sys:gateway,add:hook,hook:action', {
-    action: function gateway_lambda_before(this: any, _msg: any, ctx: any) {
-      if (options.auth.cognito.required) {
-        let seneca: any = this
-        let user = seneca?.fixedmeta?.custom?.principal?.user
-        if (null == user) {
-          return { ok: false, why: 'no-auth' }
+  const webhookMatch = (event: any, json: any) => {
+    let match = false
+    done: for (let webhook of (options.webhooks || [])) {
+      if (webhook.re) {
+        let m = webhook.re.exec(event.path)
+        if (m) {
+          let params = (webhook.params || [])
+          for (let pI = 0; pI < params.length; pI++) {
+            let param = params[pI]
+            json[param] = m[1 + pI]
+          }
+          Object.assign(json, (webhook.fixed || {}))
+          json.body =
+            'string' === typeof event.body ? parseJSON(event.body) : event.body
+          match = true
+          break done;
         }
       }
     }
-  })
-  */
+    return match
+  }
+
+
+  seneca
+    .fix('sys:gateway,kind:lambda')
+    .message(
+      'add:hook,hook:handler',
+      { handler: { name: String, match: Function, process: Function } },
+      async function(this: any, msg: any) {
+        handlers.push(msg.handler)
+      })
 
 
   async function handler(event: any, context: any) {
+
+    if (0 < handlers.length && 0 < event.Records?.length) {
+      let matched = 0
+      let lastResult = undefined
+      nextRecord: for (let record of event.Records) {
+        for (let handler of handlers) {
+          if (handler.match({ record, event, context, gtag })) {
+            matched++
+            const handlerDelegate = prepare(event, { context })
+            lastResult =
+              handler.process.call(handlerDelegate, {
+                record, event, context, gtag
+              }, gateway)
+            break nextRecord
+          }
+        }
+      }
+      if (0 < matched) {
+        return lastResult
+      }
+    }
 
     const res: any = {
       statusCode: 200,
@@ -106,7 +194,14 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
     }
 
     let body = event.body
+    let headers = null == event.headers ? {} : Object
+      .entries(event.headers)
+      .reduce(
+        (a: any, entry: any) => (a[entry[0].toLowerCase()] = entry[1], a),
+        ({} as any)
+      )
 
+    // TODO: need better control of how the body is presented
     let json = null == body ? {} :
       'string' === typeof (body) ? parseJSON(body) : body
 
@@ -120,15 +215,38 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
 
 
     // Check if hook
-    if ('GET' === event.httpMethod) {
+    if (
+      // TODO: legacy, deprecate
+      'GET' === event.httpMethod
+    ) {
       let pm = event.path.match(/([^\/]+)\/([^\/]+)$/)
-      console.log('HOOK', event.path, pm)
       if (pm) {
         json.name = pm[1]
         json.code = pm[2]
         json.handle = 'hook'
       }
-      console.log('HOOK MSG', json)
+    }
+    else {
+      webhookMatch(event, json)
+    }
+
+    let queryStringParams = {
+      ...(event.queryStringParameters || {}),
+      ...(event.multiValueQueryStringParameters || {})
+    }
+
+    Object.keys(queryStringParams).forEach((key, _index) => {
+      queryStringParams[key] =
+        (Array.isArray(queryStringParams[key]) &&
+          queryStringParams[key].length === 1) ?
+          queryStringParams[key][0] : queryStringParams[key]
+    })
+
+    json.gateway = {
+      params: event.pathParameters,
+      query: queryStringParams,
+      body,
+      headers
     }
 
     let result: any = await gateway(json, { res, event, context })
@@ -153,7 +271,6 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
                 ...(gateway$.auth.cookie || {})
               }
             )
-          console.log('SET-COOKIE', cookieStr, options.auth.cookie, gateway$.auth.cookie)
           res.headers['set-cookie'] = cookieStr
         }
         else if (gateway$.auth.remove) {
@@ -173,45 +290,41 @@ function gateway_lambda(this: any, options: GatewayLambdaOptions) {
       else if (gateway$.status) {
         res.statusCode = gateway$.status
       }
+
+      // TODO: should also accept `header` to match express
+      if (gateway$.headers) {
+        res.headers = { ...res.headers, ...gateway$.headers }
+      }
     }
 
     return res
   }
 
 
+  async function eventhandler(event: any, context: any) {
+    let msg = seneca.util.Jsonic(event.seneca$.msg)
+
+    let json = {
+      event,
+      ...msg,
+    }
+    let result: any = await gateway(json, { event, context })
+    return result
+  }
+
 
   return {
     name: 'gateway-lambda',
     exports: {
       handler,
+      eventhandler,
+      handlers: () => handlers,
     }
   }
 }
 
 
-// Default options.
-gateway_lambda.defaults = {
-  auth: {
-    cognito: {
-      required: false
-    },
-    token: {
-      name: 'seneca-auth'
-    },
-    cookie: Open({
-      maxAge: 365 * 24 * 60 * 60 * 1000,
-      httpOnly: true,
-      sameSite: true,
-      path: '/',
-    })
-  },
-  headers: Open({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': '*',
-    'Access-Control-Allow-Credentials': 'true',
-  })
-}
-
+Object.assign(gateway_lambda, { defaults })
 
 export default gateway_lambda
 

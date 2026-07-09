@@ -1,5 +1,13 @@
-declare type GatewayLambdaOptions = {
-    auth?: {
+type WebHookSpec = {
+    re: RegExp;
+    params: string[];
+    fixed: Record<string, any>;
+};
+type Options = {
+    event: {
+        msg: any;
+    };
+    auth: {
         cognito: {
             required: boolean;
         };
@@ -9,29 +17,26 @@ declare type GatewayLambdaOptions = {
         cookie?: any;
     };
     headers: Record<string, string>;
+    webhooks: WebHookSpec[];
 };
-declare function gateway_lambda(this: any, options: GatewayLambdaOptions): {
+export type GatewayLambdaOptions = Partial<Options>;
+type Trigger = {
+    record: any;
+    event: any;
+    context: any;
+    gtag: string;
+};
+type Handler = {
+    name: string;
+    match: (trigger: Trigger) => boolean;
+    process: (trigger: Trigger, gateway: Function) => any;
+};
+declare function gateway_lambda(this: any, options: Options): {
     name: string;
     exports: {
         handler: (event: any, context: any) => Promise<any>;
+        eventhandler: (event: any, context: any) => Promise<any>;
+        handlers: () => Handler[];
     };
 };
-declare namespace gateway_lambda {
-    var defaults: {
-        auth: {
-            cognito: {
-                required: boolean;
-            };
-            token: {
-                name: string;
-            };
-            cookie: import("gubu").Node & {
-                [name: string]: any;
-            };
-        };
-        headers: import("gubu").Node & {
-            [name: string]: any;
-        };
-    };
-}
 export default gateway_lambda;

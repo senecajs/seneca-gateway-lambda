@@ -4,9 +4,6 @@
 import Cookie from 'cookie'
 
 
-import { Open } from 'gubu'
-
-
 /*
 import type {
   GatewayResult
@@ -43,8 +40,9 @@ type Options = {
 export type GatewayLambdaOptions = Partial<Options>
 
 
-// Default options.
-const defaults = {
+// Default options, built with the validator Seneca passes in: shape on
+// Seneca 4, Gubu on Seneca 3.
+const defaults = ({ valid }: { valid: any }) => ({
   event: {
     msg: 'sys,gateway,handle:event'
   },
@@ -55,14 +53,14 @@ const defaults = {
     token: {
       name: 'seneca-auth'
     },
-    cookie: Open({
+    cookie: valid.Open({
       maxAge: 365 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       sameSite: true,
       path: '/',
     })
   },
-  headers: Open({
+  headers: valid.Open({
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
     'Access-Control-Allow-Credentials': 'true',
@@ -72,7 +70,7 @@ const defaults = {
     params: [String],
     fixed: {}
   }]
-}
+})
 
 
 

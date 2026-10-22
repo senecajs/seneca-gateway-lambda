@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const cookie_1 = __importDefault(require("cookie"));
-const gubu_1 = require("gubu");
-// Default options.
-const defaults = {
+// Default options, built with the validator Seneca passes in: shape on
+// Seneca 4, Gubu on Seneca 3.
+const defaults = ({ valid }) => ({
     event: {
         msg: 'sys,gateway,handle:event'
     },
@@ -18,14 +18,14 @@ const defaults = {
         token: {
             name: 'seneca-auth'
         },
-        cookie: (0, gubu_1.Open)({
+        cookie: valid.Open({
             maxAge: 365 * 24 * 60 * 60 * 1000,
             httpOnly: true,
             sameSite: true,
             path: '/',
         })
     },
-    headers: (0, gubu_1.Open)({
+    headers: valid.Open({
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': '*',
         'Access-Control-Allow-Credentials': 'true',
@@ -35,7 +35,7 @@ const defaults = {
             params: [String],
             fixed: {}
         }]
-};
+});
 function gateway_lambda(options) {
     const seneca = this;
     const handlers = [];

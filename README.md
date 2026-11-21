@@ -13,8 +13,11 @@
 ## Install
 
 ```sh
-npm install @seneca/gateway-lambda
+npm install seneca@^4 @seneca/gateway @seneca/gateway-lambda
 ```
+
+Version 2 needs Seneca 4 and Node.js 24 or later. For Seneca 3, use
+`@seneca/gateway-lambda@1`.
 
 ## Quick Example
 
@@ -22,7 +25,7 @@ npm install @seneca/gateway-lambda
 const Seneca = require('seneca')
 const GatewayLambda = require('@seneca/gateway-lambda')
 
-Seneca().use(GatewayLambda)
+Seneca().use('@seneca/gateway').use(GatewayLambda)
 ```
 
 ## More Examples

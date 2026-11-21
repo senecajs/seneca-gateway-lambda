@@ -5,8 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const cookie_1 = __importDefault(require("cookie"));
-// Default options, built with the validator Seneca passes in: shape on
-// Seneca 4, Gubu on Seneca 3.
+// Default options, built with the validator that Seneca passes in.
 const defaults = ({ valid }) => ({
     event: {
         msg: 'sys,gateway,handle:event'

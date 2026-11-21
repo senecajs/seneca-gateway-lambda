@@ -1,3 +1,4 @@
+import type Seneca from 'seneca';
 type WebHookSpec = {
     re: RegExp;
     params: string[];
@@ -31,7 +32,7 @@ type Handler = {
     match: (trigger: Trigger) => boolean;
     process: (trigger: Trigger, gateway: Function) => any;
 };
-declare function gateway_lambda(this: any, options: Options): {
+declare function gateway_lambda(this: Seneca.Instance, options: Options): {
     name: string;
     exports: {
         handler: (event: any, context: any) => Promise<any>;

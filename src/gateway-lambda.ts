@@ -3,6 +3,8 @@
 
 import Cookie from 'cookie'
 
+import type Seneca from 'seneca'
+
 
 /*
 import type {
@@ -40,9 +42,8 @@ type Options = {
 export type GatewayLambdaOptions = Partial<Options>
 
 
-// Default options, built with the validator Seneca passes in: shape on
-// Seneca 4, Gubu on Seneca 3.
-const defaults = ({ valid }: { valid: any }) => ({
+// Default options, built with the validator that Seneca passes in.
+const defaults = ({ valid }: { valid: Seneca.Instance['valid'] }): Record<string, any> => ({
   event: {
     msg: 'sys,gateway,handle:event'
   },
@@ -118,7 +119,7 @@ type Handler = {
 }
 
 
-function gateway_lambda(this: any, options: Options) {
+function gateway_lambda(this: Seneca.Instance, options: Options) {
   const seneca: any = this
 
   const handlers: Handler[] = []

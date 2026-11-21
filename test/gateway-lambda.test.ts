@@ -8,8 +8,7 @@ describe('gateway-lambda', () => {
   test('happy', async () => {
     const seneca = Seneca({ legacy: false })
       .test()
-      .use('promisify')
-      .use('gateway')
+      .use('@seneca/gateway')
       .use(GatewayLambda)
     await seneca.ready()
   })
@@ -22,8 +21,7 @@ describe('gateway-lambda', () => {
       // use quiet$ directive when available
       .quiet()
 
-      .use('promisify')
-      .use('gateway')
+      .use('@seneca/gateway')
       .use(GatewayLambda)
       .act('sys:gateway,add:hook,hook:fixed', { action: { y: 99 } })
       .message('foo:1', async function(m: any) {
@@ -83,8 +81,7 @@ describe('gateway-lambda', () => {
       // use quiet$ directive when available
       .quiet()
 
-      .use('promisify')
-      .use('gateway')
+      .use('@seneca/gateway')
       .use(GatewayLambda, {
         headers: {
           "Access-Control-Allow-Origin": "foo",
@@ -130,8 +127,7 @@ describe('gateway-lambda', () => {
       // use quiet$ directive when available
       // .quiet()
 
-      .use('promisify')
-      .use('gateway')
+      .use('@seneca/gateway')
       .use(GatewayLambda)
       .message('foo:1', async function(msg: any) {
         return { ok: true, bar: 2, event: msg.event }
@@ -202,8 +198,7 @@ describe('gateway-lambda', () => {
       // use quiet$ directive when available
       .quiet()
 
-      .use('promisify')
-      .use('gateway')
+      .use('@seneca/gateway')
       .use(GatewayLambda, {
         webhooks: [{
           re: /api\/public\/hook\/([^\/]+)\/([^\/?]+)/,
@@ -248,11 +243,64 @@ describe('gateway-lambda', () => {
   })
 
 
+  // The auth.cookie option is an open bag of cookie fields: keys that the
+  // defaults do not name, such as domain, pass through to the cookie.
+  test('auth-cookie', async () => {
+    const seneca = Seneca({ legacy: false })
+      .test()
+      .quiet()
+      .use('@seneca/gateway')
+      .use(GatewayLambda, {
+        auth: {
+          token: { name: 'my-auth' },
+          cookie: { domain: 'example.com', secure: true },
+        }
+      })
+      .message('login:1', async function(_m: any) {
+        return { ok: true, gateway$: { auth: { token: 'tok1' } } }
+      })
+      .message('login:2', async function(_m: any) {
+        return {
+          ok: true,
+          gateway$: { auth: { token: 'tok2', cookie: { path: '/app' } } }
+        }
+      })
+      .message('logout:1', async function(_m: any) {
+        return { ok: true, gateway$: { auth: { remove: true } } }
+      })
+
+    await seneca.ready()
+
+    let handler = seneca.export('gateway-lambda/handler')
+    let evmock = (body: any) => ({ body, headers: {} })
+
+    let out = await handler(evmock({ login: 1 }), {})
+    expect(out.statusCode).toEqual(200)
+    let cookie = out.headers['set-cookie']
+    expect(cookie).toMatch(/^my-auth=tok1;/)
+    expect(cookie).toMatch(/Domain=example\.com/)
+    expect(cookie).toMatch(/Secure/)
+    expect(cookie).toMatch(/HttpOnly/)
+    expect(cookie).toMatch(/SameSite=Strict/)
+    expect(cookie).toMatch(/Path=\/(;|$)/)
+    expect(cookie).toMatch(/Max-Age=\d+/)
+
+    out = await handler(evmock({ login: 2 }), {})
+    cookie = out.headers['set-cookie']
+    expect(cookie).toMatch(/^my-auth=tok2;/)
+    expect(cookie).toMatch(/Path=\/app/)
+    expect(cookie).toMatch(/Domain=example\.com/)
+
+    out = await handler(evmock({ logout: 1 }), {})
+    expect(out.headers['set-cookie']).toEqual(
+      'my-auth=NONE; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT')
+  })
+
+
   test('custom-handler', async () => {
     const seneca = Seneca({ legacy: false })
       .test()
-      .use('promisify')
-      .use('gateway')
+      .use('@seneca/gateway')
       .use(GatewayLambda)
       .act('sys:gateway,kind:lambda,add:hook,hook:handler', {
         handler: {

@@ -3,8 +3,7 @@
 
 import Cookie from 'cookie'
 
-
-import { Open } from 'gubu'
+import type Seneca from 'seneca'
 
 
 /*
@@ -43,8 +42,8 @@ type Options = {
 export type GatewayLambdaOptions = Partial<Options>
 
 
-// Default options.
-const defaults = {
+// Default options, built with the validator that Seneca passes in.
+const defaults = ({ valid }: { valid: Seneca.Instance['valid'] }): Record<string, any> => ({
   event: {
     msg: 'sys,gateway,handle:event'
   },
@@ -55,14 +54,14 @@ const defaults = {
     token: {
       name: 'seneca-auth'
     },
-    cookie: Open({
+    cookie: valid.Open({
       maxAge: 365 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       sameSite: true,
       path: '/',
     })
   },
-  headers: Open({
+  headers: valid.Open({
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
     'Access-Control-Allow-Credentials': 'true',
@@ -72,7 +71,7 @@ const defaults = {
     params: [String],
     fixed: {}
   }]
-}
+})
 
 
 
@@ -120,7 +119,7 @@ type Handler = {
 }
 
 
-function gateway_lambda(this: any, options: Options) {
+function gateway_lambda(this: Seneca.Instance, options: Options) {
   const seneca: any = this
 
   const handlers: Handler[] = []
